@@ -142,14 +142,16 @@ def define_player_marks(player1,player2):
 def print_player_information(player):
     print('{} is "{}".'.format(player.get_name(),player.get_mark()))
 
+# Print the instruction game board
+def print_instruction_board():
+    instruction_board = Board(['#',1,2,3,4,5,6,7,8,9])
+    instruction_board.display()
 
 # Prints game instructions
 def print_game_instructions():
     print('\n//INSTRUCTIONS//')
     print('The game board is shown below.\nIt has nine slots total and each slot has its own numeric code.\nThe layout of the numeric codes is the same as on keyboard NumPad.\nWhen placing your mark during the game, type the number of corresponding slot where you want to place your mark.\n')
-    
-    instruction_board = Board(['#',1,2,3,4,5,6,7,8,9])
-    instruction_board.display()
+    print_instruction_board()
 
 
 # Changes player turn
@@ -291,6 +293,7 @@ while True:
             player_turn(board,player2)
         
         # Displaying the board after player turn
+        print_instruction_board()
         board.display()
         
         # Checking for win
