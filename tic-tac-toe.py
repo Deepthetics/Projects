@@ -225,13 +225,13 @@ def game_is_tie(board):
 def print_winner_information(board,player1,player2):
     
     if board.check_X_win() == True:
-        if player1.get_mark == 'X':
+        if player1.get_mark() == 'X':
             print('{} has won!'.format(player1.get_name()))
         else:
             print('{} has won!'.format(player2.get_name()))
             
     elif board.check_O_win() == True:
-        if player1.get_mark == 'O':
+        if player1.get_mark() == 'O':
             print('{} has won!'.format(player1.get_name()))
         else:
             print('{} has won!'.format(player2.get_name()))
