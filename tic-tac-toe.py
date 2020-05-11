@@ -250,19 +250,18 @@ def bot_turn(board, player):
 def recursive_bot(board, player, positions_left, counter):
     random_position = choice(positions_left)
     if board.position_is_empty(random_position):
-        #if counter >= len(positions_left): # Eases the game a bit: the bot does not check every position in early game
-         #   return random_position 
+        # The counter eases the game a bit: bot makes mistakes and does not check every position
+        if counter >= len(positions_left):
+            return random_position 
         if not_losing_move(board, player, random_position): # End recursion: Returns a position because checked that the human player cannot win next round
             return random_position 
     positions_left.remove(random_position)
-    print(positions_left)
     if len(positions_left) == 0:
         return random_position # End recursion: no more positions to check, select the last position
     return recursive_bot(board, player, positions_left, counter + 1) # Recursively test next random position
 
 
 # Checks that the human player will not win next round if the position is selected
-# TODO: Fix this, for some reason is unable to identify the non-losing move, always selects the last left in positions_left
 def not_losing_move(board, player, position):
     # Copy the game board and add the position for testing
     board_with_position = copy.deepcopy(board)
@@ -272,13 +271,14 @@ def not_losing_move(board, player, position):
     mark_for_testing = 'X'
     if player.get_mark() == 'X':
         mark_for_testing = 'O'
+    # Simulate every possible human move that can result if the move is made
     for human_game_move in range(1,10):
         board_with_human_move = copy.deepcopy(board_with_position)
-        if (board_with_human_move.position_is_empty):
+        if (board_with_human_move.position_is_empty(human_game_move)):
             board_with_human_move.add_raw_mark(mark_for_testing, human_game_move)
+            # If the human can win next round decline the move
             if board_with_human_move.check_win(mark_for_testing):
                 return False
-    print('not a losing move')
     return True
             
             
