@@ -1,3 +1,6 @@
+from random import randint, choice
+import copy
+
 # Class containing player information
 class Player():
 
@@ -49,6 +52,11 @@ class Board():
     # Adds a value to the list of values associated with the board
     def add_mark(self,player,position):
         self.positions[position] = player.get_mark()
+
+    # Adds a value to the list of values associated with the board, accepts raw marks
+    def add_raw_mark(self, mark, position):
+        if mark.upper() == 'X' or mark.upper() == 'O':
+            self.positions[position] = mark
 
     # Returns True if the position is empty 
     # Parameter 'position' expected to be the player chosen position for their mark on the game board
@@ -103,6 +111,28 @@ class Board():
         else:
             return False
 
+
+    # Checks if the mark given as parameter has won the game
+    def check_win(self, mark):
+        if self.positions[1] == mark and self.positions[2] == mark and self.positions[3] == mark:
+            return True
+        elif self.positions[4] == mark and self.positions[5] == mark and self.positions[6] == mark:
+            return True
+        elif self.positions[7] == mark and self.positions[8] == mark and self.positions[9] == mark:
+            return True
+        elif self.positions[1] == mark and self.positions[4] == mark and self.positions[7] == mark:
+            return True
+        elif self.positions[2] == mark and self.positions[5] == mark and self.positions[8] == mark:
+            return True
+        elif self.positions[3] == mark and self.positions[6] == mark and self.positions[9] == mark:
+            return True
+        elif self.positions[1] == mark and self.positions[5] == mark and self.positions[9] == mark:
+            return True
+        elif self.positions[3] == mark and self.positions[5] == mark and self.positions[7] == mark:
+            return True
+        else:
+            return False
+
     # Returns True if the game ends in a tie
     def check_tie(self):
         
@@ -142,14 +172,16 @@ def define_player_marks(player1,player2):
 def print_player_information(player):
     print('{} is "{}".'.format(player.get_name(),player.get_mark()))
 
+# Print the instruction game board
+def print_instruction_board():
+    instruction_board = Board(['#',1,2,3,4,5,6,7,8,9])
+    instruction_board.display()
 
 # Prints game instructions
 def print_game_instructions():
     print('\n//INSTRUCTIONS//')
     print('The game board is shown below.\nIt has nine slots total and each slot has its own numeric code.\nThe layout of the numeric codes is the same as on keyboard NumPad.\nWhen placing your mark during the game, type the number of corresponding slot where you want to place your mark.\n')
-    
-    instruction_board = Board(['#',1,2,3,4,5,6,7,8,9])
-    instruction_board.display()
+    print_instruction_board()
 
 
 # Changes player turn
@@ -157,8 +189,6 @@ def change_player_turn(player1,player2):
     player1.set_turn(not(player1.get_turn()))
     player2.set_turn(not(player2.get_turn()))
 
-
-from random import randint
 
 # Chooses the starting player
 def randomize_starting_player(player1,player2):
@@ -205,6 +235,56 @@ def player_turn(board,player):
             continue
 
 
+# Selects a random game move, tries to prevent other player from winning
+def bot_turn(board, player):
+    positions_left = []
+    for i in range(len(board.positions)):
+        if board.position_is_empty(i):
+            positions_left.append(i)
+    print(positions_left)
+    position = recursive_bot(board, player, positions_left, 0)
+    board.add_mark(player, position)
+
+
+# Selects a game move, if the move is not empty or it is a losing move, then recursively selects another until 10 iterations
+def recursive_bot(board, player, positions_left, counter):
+    random_position = choice(positions_left)
+    if board.position_is_empty(random_position):
+        # The counter eases the game a bit: bot makes mistakes and does not check every position
+        if counter >= len(positions_left):
+            return random_position 
+        if not_losing_move(board, player, random_position): # End recursion: Returns a position because checked that the human player cannot win next round
+            return random_position 
+    positions_left.remove(random_position)
+    if len(positions_left) == 0:
+        return random_position # End recursion: no more positions to check, select the last position
+    return recursive_bot(board, player, positions_left, counter + 1) # Recursively test next random position
+
+
+# Checks that the human player will not win next round if the position is selected
+def not_losing_move(board, player, position):
+    # Copy the game board and add the position for testing
+    board_with_position = copy.deepcopy(board)
+    board_with_position.add_mark(player, position)
+
+    # Check the game mark of the human player:
+    mark_for_testing = 'X'
+    if player.get_mark() == 'X':
+        mark_for_testing = 'O'
+    # Simulate every possible human move that can result if the move is made
+    for human_game_move in range(1,10):
+        board_with_human_move = copy.deepcopy(board_with_position)
+        if (board_with_human_move.position_is_empty(human_game_move)):
+            board_with_human_move.add_raw_mark(mark_for_testing, human_game_move)
+            # If the human can win next round decline the move
+            if board_with_human_move.check_win(mark_for_testing):
+                return False
+    return True
+            
+            
+
+
+
 # Returns True if there is a win
 def game_is_won(board):
     
@@ -225,13 +305,13 @@ def game_is_tie(board):
 def print_winner_information(board,player1,player2):
     
     if board.check_X_win() == True:
-        if player1.get_mark == 'X':
+        if player1.get_mark() == 'X':
             print('{} has won!'.format(player1.get_name()))
         else:
             print('{} has won!'.format(player2.get_name()))
             
     elif board.check_O_win() == True:
-        if player1.get_mark == 'O':
+        if player1.get_mark() == 'O':
             print('{} has won!'.format(player1.get_name()))
         else:
             print('{} has won!'.format(player2.get_name()))
@@ -250,71 +330,151 @@ def ask_replay():
             print('Please type either "Yes" or "No".')
             continue
 
+# Main function for singleplayer game
+def single_player_game():
+    # Creating players
+    player1 = Player(ask_player_name("Player 1"))
+    player2 = Player("Tic Tac Bot")
 
-# Informative printing
-print('Welcome to the game of Tic Tac Toe!\n')
+    define_player_marks(player1, player2)
 
-# Creating players
-player1 = Player(ask_player_name("Player 1"))
-player2 = Player(ask_player_name("Player 2"))
+    print_player_information(player1)
+    print_player_information(player2)
+    print_game_instructions()
 
-# Defining player marks
-define_player_marks(player1,player2)
+    # Create board
+    board = Board()
 
-print_player_information(player1)
-print_player_information(player2)
-
-# Printing game instructions
-print_game_instructions()
-
-# Creating board
-board = Board()
-
-# Game starting
-while True:
-    
-    # Randomizing the starting player
-    randomize_starting_player(player1,player2)
-    
-    # Displaying board
-    board.display()
-    
-    # Loop of the gameplay
+    # Game start
     while True:
-        
-        # Checking whose turn it is
-        if player1.get_turn() == True:
-            # Player 1 turn
-            player_turn(board,player1)
-        else:
-            # Player 2 turn
-            player_turn(board,player2)
-        
-        # Displaying the board after player turn
+        # Randomize starting player
+        randomize_starting_player(player1,player2)
+
         board.display()
         
-        # Checking for win
-        if game_is_won(board) == True:
-            # Informative printing 
-            print_winner_information(board,player1,player2)
+        # Loop for a game round
+        while True:
+            # Checking whose turn it is
+            if player1.get_turn() == True:
+                # Player 1 turn
+                player_turn(board,player1)
+            else:
+                # Bot turn
+                bot_turn(board,player2)
+            
+            # Displaying the board after player turn
+            print_instruction_board()
+            board.display()
+            
+            # Checking for win
+            if game_is_won(board) == True:
+                # Informative printing 
+                print_winner_information(board,player1,player2)
+                break
+            # Checking for tie
+            elif game_is_tie(board) == True:
+                break
+            # Changing player turn
+            else:            
+                change_player_turn(player1,player2)
+                continue
+
+        # Asking for replay
+        play_again = ask_replay()        
+        if play_again == True:
+            # Clearing the board
+            board.clear_board()
+            continue
+        else:
             break
-        # Checking for tie
-        elif game_is_tie(board) == True:
+
+
+# Main function for multiplayer game
+def multi_player_game():
+    # Creating players
+    player1 = Player(ask_player_name("Player 1"))
+    player2 = Player(ask_player_name("Player 2"))
+
+    # Defining player marks
+    define_player_marks(player1,player2)
+
+    print_player_information(player1)
+    print_player_information(player2)
+
+    # Printing game instructions
+    print_game_instructions()
+
+    # Creating board
+    board = Board()
+
+    # Game starting
+    while True:
+        
+        # Randomizing the starting player
+        randomize_starting_player(player1,player2)
+        
+        # Displaying board
+        board.display()
+        
+        # Loop of the gameplay
+        while True:
+            
+            # Checking whose turn it is
+            if player1.get_turn() == True:
+                # Player 1 turn
+                player_turn(board,player1)
+            else:
+                # Player 2 turn
+                player_turn(board,player2)
+            
+            # Displaying the board after player turn
+            print_instruction_board()
+            board.display()
+            
+            # Checking for win
+            if game_is_won(board) == True:
+                # Informative printing 
+                print_winner_information(board,player1,player2)
+                break
+            # Checking for tie
+            elif game_is_tie(board) == True:
+                break
+            # Changing player turn
+            else:            
+                change_player_turn(player1,player2)
+                continue
+
+        # Asking for replay
+        play_again = ask_replay()        
+        if play_again == True:
+            # Clearing the board
+            board.clear_board()
+            continue
+        else:
             break
-        # Changing player turn
-        else:            
-            change_player_turn(player1,player2)
+
+# Ask the player to select game type for the game
+def select_game_type():
+    while True:
+        decision = input('Select multi or single player game: answer "multi" or "single": ')
+        if decision.lower() == 'single' or decision.lower() == 'multi':
+            return decision.lower()
+        else:
+            print('Please type either "singleplayer" or "multiplayer".')
             continue
     
-    # Asking for replay
-    play_again = ask_replay()        
-    if play_again == True:
-        # Clearing the board
-        board.clear_board()
-        continue
-    else:
-        break
 
-# Informative printing
-print('Thank you for playing!')
+if __name__ == "__main__":
+    print('Welcome to the game of Tic Tac Toe!\n')
+
+    # Select game type
+    game_type = select_game_type()
+
+    if game_type == 'single':
+        single_player_game()
+    else:
+        multi_player_game()
+
+    # Informative printing
+    print('Thank you for playing!')
 
